@@ -1,7 +1,10 @@
 # EEDFB_Solver
 
-~~Based off of the Transfer Matrix Model from S. Li et al., IEEE J. Sel. Topics. Quantum Electron. 9, 1153 (2003)~~
-Code originally written by C. Siegler in .m for the Mawst/Botez lab. Converted to Python and wrapped.
+#Based off of the Transfer Matrix Model from S. Li et al., IEEE J. Sel. Topics. Quantum Electron. 9, 1153 (2003)
+#Code originally written by C. Siegler in .m for the Mawst/Botez lab. Converted to Python and wrapped.
+
+#Unless specified otherwise, units are cm
+#There are some unit switches to mm from the old code. Will fix this eventually
 
 Solver for COMSOL outputs, with some assumptions on the output shape from COMSOL.
 
