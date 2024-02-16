@@ -1,0 +1,6 @@
+*.txt
+
+!20220216_5L_EEDFB_cap_GH_finesweep_shallowgratings_combine.txt
+
+*.json
+!JSON_Template.json

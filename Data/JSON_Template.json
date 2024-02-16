@@ -1,0 +1,18 @@
+{
+    "modes_solved": 0,
+    "filename": "20220216_5L_EEDFB_cap_GH_finesweep_shallowgratings_combine.txt",
+    "wavelength": 4.7e-04,
+    "neff": 3.21754,
+    "L": 3,
+    "l": 0,
+    "rR": 0.5196,
+    "rL": 0.999,
+    "params_indices": [
+      [0, 1],
+      [0, 1],
+      [0, 1]
+    ],
+    "plot_SWEEP": 0,
+    "num_Modes": 100,
+    "num_Z": 500
+  }
