@@ -5,23 +5,28 @@ from scipy.optimize import fsolve
 import numpy as np
 import warnings
 
+### Gamma calc
 def gamma_DFB(kappa, alpha, delta):
     return np.sqrt((kappa**2) + (alpha + 1j*delta)**2 ) 
 
+### Converting to relative frequency
 def alpha_prime(alpha, zeta):
     return alpha - np.imag(zeta)
 
+### Converting to relative detuning
 def delta_prime(delta, zeta):
     return delta + np.real(zeta)
 
-#### F_DFB_matrix Input = [kappa, gamma, L]
+### Basic structure of the finite mode structure component F_DFB
+### 1 S. Li et al., IEEE J. Sel. Topics. Quantum Electron. 9, 1153 (2003)
 def F_DFB_matrix(alpha, delta, kappa, gamma, L):
     F = np.array([
         [np.cosh(gamma*L) + (alpha + 1j*delta)/gamma*np.sinh(gamma*L), 1j*kappa/gamma*np.sinh(gamma*L)],
         [-1j*kappa/gamma*np.sinh(gamma*L), np.cosh(gamma*L) - (alpha + 1j*delta)/gamma*np.sinh(gamma*L)]
     ])
     return F
-    
+
+### For facet reflectivity
 def Fr(r):
     inv_denom = 1 / (1 - r)
     return np.array([
@@ -29,6 +34,7 @@ def Fr(r):
         [-r * inv_denom, inv_denom]
     ])
     
+### For pi phase shift, currently unused
 def Fp(phi):
     return [np.exp(1j*phi),
             0,
@@ -49,16 +55,16 @@ def F_DFB(alpha, delta, kappa0, zeta0, L0, rR, rL, asurf, Lambda):
     F = Fr(rR) @ F_DFB_matrix(alpha_prime_DFB, delta_prime_DFB, kappa0, gamma, L0) @ F_DFB_matrix(alpha_prime_DFB, delta_prime_DFB, kappa0, gamma, L0) @ np.linalg.inv(Fr(rL))
     return F
 
-
+### See Li 2003 - 
+### Essentially, the lasing condition is that with no incoming light, we still generate outcoming light. F22 is returned as the condition
 def F22(F):
     return F[1, 1] 
     
+### Solver base
 def Fvec_solv(x, *args):
-    
     alpha, delta = x
     F = F_DFB(alpha, delta, *args)
-    F22_value = F22(F)
-    
+    F22_value = F22(F)  
     return [np.real(F22_value), np.imag(F22_value)]
 
 ### Right and Left moving wave solutions for the coupled wave approach
@@ -72,12 +78,10 @@ def Fdfb_S(z, kappa, alpha, delta, gamma, R, S):
 #### In the Matlab script, this is called 'Find Modes', and is called to execute the transfer matrix method.
 #### Following execution, results are passed into the coupled wave solver.   
 def Solver_Loop(inputs, num_Modes):
-    
     alpha0 = []
     delta = []
     guess_all = []
     norm_guess_all = []
- 
     #inputs = (kappa_DFB, zeta_DFB, L1, rR, rL)
     kappa0 = inputs[0]
     zeta0 = inputs[1]
@@ -91,31 +95,21 @@ def Solver_Loop(inputs, num_Modes):
                             max(np.ceil(np.abs(np.real(kappa0)) * L) + 10, 20), 0.3):
             
             ### Identifying guess from kappa, zeta (iterating through possible values up to 2imag_kappa + 5, real_kapp + 10
-            ### Converting to mm^-1 (Should I use cm here?)
             guess = [j / L, i / L - np.real(zeta0)]
             guess_all.append(guess)
             norm_guess = np.linalg.norm(Fvec_solv(guess, *inputs))
             norm_guess_all.append(norm_guess)
-            #print(norm_guess)
-
+            ### Converting to mm^-1 (eventually convert everything to cm)
             min_Fval = max(300, np.abs(kappa0)**2 * 10)
             if not alpha0 or guess[0] < np.min(alpha0):
                 min_Fval *= 100
-            #print(min_Fval)
             
             ### If the norm guess of Fvec_solv is less than the max of 300, np.abs(kappa0)**2 * 10 (300 is arbitrary?) continue
             if norm_guess < min_Fval:
                 solution, info, ier, mesg = fsolve(Fvec_solv, guess, args=inputs, full_output=True, xtol=1E-20, epsfcn=1E-20)
-                #print(solution)
-                
-                # if ier != or np.linalg.norm(info['fvec']) > 1e-5:
-                #     continue
-                
+
                 ### If alpha0 is empty, or if the functions are not close enoguh to the target
                 ### "In summary, the expression is used to determine if the current solution found by fsolve is essentially a duplicate of any solution found in previous iterations, based on a specified tolerance (0.01). If it returns True, the current solution is very close to at least one previously found solution."
-                # print(f"alpha0 {alpha0}")
-                # print(f"Vert stack transposed: {np.vstack([alpha0, delta]).T}")
-                # print(solution)
                 if not alpha0 or not np.any(np.all(np.abs(np.vstack([alpha0, delta]).T - solution) < 0.01, axis=1)):
                     alpha0.append(solution[0])
                     delta.append(solution[1])
@@ -123,33 +117,28 @@ def Solver_Loop(inputs, num_Modes):
                 ### If not empty
                 elif alpha0:
                     index = int(np.where(np.prod(np.abs(np.vstack([alpha0, delta]).T - solution) < 0.01, axis=1))[0])
-                    ### If solution is satisfactory, i.e. better than previous solution, 
-                    #print(f"solution: {np.abs(Fvec_solv(solution, *inputs))}")
-                    #print(f"alpha0 delta index solutions: {np.abs(Fvec_solv([alpha0[index], delta[index]], *inputs))}")
+
                     if np.abs(Fvec_solv(solution, *inputs))[0] < np.abs(Fvec_solv([alpha0[index], delta[index]], *inputs))[0]:
                         ### Then store the new results
                         alpha0[index] = solution[0]
                         delta[index] = solution[1]
+                        
         ### j = num modes found for this iteration
         if len(alpha0) > 2 and np.max(alpha0) < (j - 20) / L:
-            #print(j)
             break
             
     if alpha0:
-        ### Sorting results by loss, and then resorting
         sorted_indices = np.argsort(alpha0)
         alpha0 = np.array(alpha0)[sorted_indices]
         delta = np.array(delta)[sorted_indices]
         num_modes = ~np.isnan(alpha0)
         alpha0 = alpha0[num_modes]
-        delta = delta[num_modes]       
-    
-    #print(f"alpha0 is {alpha0} with {num_modes} found")
-    #print(f"delta is {delta} with {num_modes} found")    
+        delta = delta[num_modes]         
     return alpha0, delta
 
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
-## Roughly lines 250 and on, in the finite_solver_trans_3d_sweep_DFB_test_mod.m file
+### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+### Coupled mode solver functions
+### Roughly lines 250 and on, in the finite_solver_trans_3d_sweep_DFB_test_mod.m file
 ### To integrate DBR regions, add the lines for the DBR, trans, and phase shift regions [Rd1, Sd2, ... etc]. 
 def Sg(z, L1, kappa, alpha, delta, gamma, Rd, Sd):
     if z <= L1:
@@ -251,15 +240,12 @@ def Coupled_Wave_Solver(alpha_m, delta_m, inputs, num):
     ### Def asurf_s here
         asurf_1 = asurf_DFB
             
-        #### Internal loss, alpha_i or alpha_fc, which can be added elsewhere
+        #### Internal loss, alpha_i or alpha_fc, which isn't used here, but can be if desired.
         alpha_fc = 0  
         #### Grating related loss. Jae Ha used alpha_fc = 0, so alpha_m is the grating related loss. Technically this would be the same as the threshold gain? (gth = 2alpham + alphai)
         #### However in this script, we're using alpha_i = alpha_w + alpha_bf, which is calculated in the plot DFB script during postprocessing, i.e. not here. So, alpha_grating_related
         #### is unused and alpha_fc = 0.    
-        
         alpha_grating_related = 2*alpha_m + alpha_fc
-
-        ### Declaring exports
 
         for i in range(len(alpha_m)):
             alpha0 = alpha_m[i]
@@ -381,16 +367,11 @@ def Solve(i, j, k, L, l, wavelength, Lambda, derived_values, rR, rL, num_Modes, 
     zeta_DFB = derived_values['zeta'][i,j,k]
     
     alpha_extra_dbr = alpha_DBR - alpha_DFB
-    
     DFB_Periods = round(L/(10*Lambda))
-    #print(DFB_Periods)
-    
     duty_cycle = derived_values['params'][2][k]
-    #print(f"Duty cycle is {duty_cycle*100}%")
-    
     L1 = DFB_Periods * Lambda / 2
     L2 = L1
-    
+
     ### Inputs set in the model, passed into the function, not solved for.
     inputs = (kappa_DFB, zeta_DFB, L1, rR, rL, asurf_DFB, Lambda)
 
@@ -400,9 +381,6 @@ def Solve(i, j, k, L, l, wavelength, Lambda, derived_values, rR, rL, num_Modes, 
     alpha_m, delta_m = Solver_Loop(inputs, num_Modes)
     
     print(f"Number of modes found: {len(alpha_m)}")
-    
-    #if ~np.isnan(alpha_m) == 0:
-    #    print(f"No modes found, AAAAAAA!!!!!")
         
     ### Now, solving for the rest of the script with alpha0, delta as inputs to the coupled wave solver
         
@@ -410,7 +388,7 @@ def Solve(i, j, k, L, l, wavelength, Lambda, derived_values, rR, rL, num_Modes, 
     
     if Plot_SWEEP:
         plot_mode_spectrum(k0, wavelength, Lambda, alpha_m, delta_m)
-    
+
     
     return (alpha_m, delta_m, Gamma_lg, alpha_surf, Ratio_export, Guided_export, R_export, S_export, P_R, P_L)
     
