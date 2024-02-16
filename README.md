@@ -1,4 +1,8 @@
 # EEDFB_Solver
+
+~~Based off of the Transfer Matrix Model from S. Li et al., IEEE J. Sel. Topics. Quantum Electron. 9, 1153 (2003)~~
+Code originally written by C. Siegler in .m for the Mawst/Botez lab. Converted to Python and wrapped.
+
 Solver for COMSOL outputs, with some assumptions on the output shape from COMSOL.
 
 EEDFB_Finite_Mode_Solver is built for loading JSON files, containing parameters for the execution.
