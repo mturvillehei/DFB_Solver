@@ -88,13 +88,19 @@ def Sort(filename, wavelength, Lambda):
 
     asurf_DFB = DFB_mode_2[..., 10]
 
-    kappa = -(deltak_DFB[..., 0] - deltak_DFB[..., 1]) * K0 / 2 / k0 + 1j * (alpha_DFB[..., 0] - alpha_DFB[..., 1]) / 2
-    zeta = -(deltak_DFB[..., 0] + deltak_DFB[..., 1]) * K0 / 2 / k0 + 1j * (alpha_DFB[..., 0] + alpha_DFB[..., 1]) / 2
-    
-    kappa_abs = np.abs(kappa)
+    kappa_DFB = -(deltak_DFB[..., 0] - deltak_DFB[..., 1]) * K0 / 2 / k0 + 1j * (alpha_DFB[..., 0] - alpha_DFB[..., 1]) / 2
+    zeta_DFB = -(deltak_DFB[..., 0] + deltak_DFB[..., 1]) * K0 / 2 / k0 + 1j * (alpha_DFB[..., 0] + alpha_DFB[..., 1]) / 2
+
+    ### This needs to be updated once simulating actual DBR and SEDFB designs. '1.5' is arbitrary 
+    ### and there will be detuning due to the change in DBR structure. 
     alpha_DBR = alpha_DFB + 1.5
     deltak_DBR = deltak_DFB
     asurf_DBR = asurf_DFB
+    
+    kappa_DBR = -(deltak_DBR[..., 0] - deltak_DBR[..., 1]) * K0 / 2 / k0 + 1j * (alpha_DBR[..., 0] - alpha_DBR[..., 1]) / 2
+    zeta_DBR = -(deltak_DBR[..., 0] + deltak_DBR[..., 1]) * K0 / 2 / k0 + 1j * (alpha_DBR[..., 0] + alpha_DBR[..., 1]) / 2
+    
+    
     
     return {
         "params": params,
@@ -102,12 +108,13 @@ def Sort(filename, wavelength, Lambda):
         "alpha_DFB": alpha_DFB,
         "deltak_DFB": deltak_DFB,
         "asurf_DFB": asurf_DFB,
-        "kappa": kappa,
-        "zeta": zeta,
-        "kappa_abs": kappa_abs,
+        "kappa_DFB": kappa_DFB,
+        "zeta_DFB": zeta_DFB,
         "alpha_DBR": alpha_DBR,
         "deltak_DBR": deltak_DBR,
         "asurf_DBR": asurf_DBR,
+        "kappa_DBR": kappa_DBR,
+        "zeta_DBR": zeta_DBR,
         "DFB_mode_1": DFB_mode_1, 
         "DFB_mode_2": DFB_mode_2,
         "k0": k0,

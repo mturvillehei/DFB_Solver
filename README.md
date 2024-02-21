@@ -1,10 +1,9 @@
-# EEDFB_Solver
+# DFB_Solver
 
 #Based off of the Transfer Matrix Model from S. Li et al., IEEE J. Sel. Topics. Quantum Electron. 9, 1153 (2003)
 #Code originally written by C. Siegler in .m for the Mawst/Botez lab. Converted to Python and wrapped.
 
 #Unless specified otherwise, units are cm
-#There are some unit switches to mm from the old code. Will fix this eventually
 
 Solver for COMSOL outputs, with some assumptions on the output shape from COMSOL.
 
@@ -13,7 +12,6 @@ EEDFB_Finite_Mode_Solver is built for loading JSON files, containing parameters 
 Process flow is as follows:
 
 In COMSOL, a 3D parametric sweep is performed - the values populate the first three columns. An additional 11 columns are populated with:
-##### fill this
 
 Raw data is output as a text file. Place this text file in the Data folder, and update the corresponding template JSON file with the filename.
 Additionally, update any other parameters. Parametric sweeps over multiple config files/multiple parameters can be additionally handled by wrapping the Main() function.
@@ -24,9 +22,8 @@ Data is sorted via Sort_Data_Infinite.py
 
 Sorted_Data is then input, along with parameters (Defined in the JSON file), into Solve().
 
-Solve() performs two primary processes:
-	Transfer Matrix Method (Li et all, 2003)
-	Coupled Wave Solver.
+Solve() performs the Transfer Matrix Method (Li et all, 2003)
+Coupled_Wave_Solver() calculates the resultant field profiles 
 
 Data is output for each point in the parametric sweep, converted to lists, and then stored in the original JSON file.
 
