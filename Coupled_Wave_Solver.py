@@ -335,7 +335,7 @@ def Coupled_Wave_Solver_EEDFB(alpha_m, delta_m, kappa_DFB, zeta_DFB, L, l, L_tra
             Z_export[i,:] = z
             if i < 4:
                 if plot_fields:
-                    plot_field_intensity(z, Guided_Field, params_.L)                
+                    plot_field_intensity(z, Guided_Field, params_.L, 'Field Intensity')                
                     plot_field_profile_real(z, R, S, params_.L)
                     plt.show()
     return (Gamma_lg, alpha_surf, Guided_export, R_export, S_export, 

@@ -7,16 +7,19 @@ from Post_Process import plot_mode_spectrum
 from Post_Process import plot_field_intensity
 
 ### Gamma calc
-def gamma_DFB(kappa, alpha, delta):
-    return np.sqrt((kappa**2) + (alpha + 1j*delta)**2 ) 
+gamma_DFB = lambda kappa, alpha, delta: np.sqrt((kappa**2) + (alpha + 1j*delta)**2 ) 
+# def gamma_DFB(kappa, alpha, delta):
+#     return np.sqrt((kappa**2) + (alpha + 1j*delta)**2 ) 
 
 ### Converting to relative frequency
-def alpha_prime(alpha, zeta):
-    return alpha - np.imag(zeta)
+alpha_prime = lambda alpha, zeta: alpha - np.imag(zeta)
+# def alpha_prime(alpha, zeta):
+#     return alpha - np.imag(zeta)
 
 ### Converting to relative detuning
-def delta_prime(delta, zeta):
-    return delta + np.real(zeta)
+delta_prime = lambda delta, zeta: delta + np.real(zeta)
+# def delta_prime(delta, zeta):
+#     return delta + np.real(zeta)
 
 ### Basic structure of the finite mode structure component F_DFB
 ### 1 S. Li et al., IEEE J. Sel. Topics. Quantum Electron. 9, 1153 (2003)
@@ -43,16 +46,16 @@ def Fp(phi):
     
 ### 1 S. Li et al., IEEE J. Sel. Topics. Quantum Electron. 9, 1153 (2003)
 
-### UPDATE for the Cleave location shift 
-def F_DFB(alpha, delta, kappa0, zeta0, L0, rR, rL, asurf, Lambda):
+### Updated for the Cleave location shift and Pi Phase Shift inclusion
+### Will need to update for DBR
+def F_DFB(alpha, delta, kappa0, zeta0, L0, rR, rL, asurf, Lambda, phiL, theta):
 
     alpha_prime_DFB = alpha_prime(alpha, zeta0) ### Converting to alpha prime, delta prime
     delta_prime_DFB = delta_prime(delta, zeta0)
     gamma = gamma_DFB(kappa0, alpha_prime_DFB, delta_prime_DFB)
-          
-    #### F_DFB_matrix Input = [kappa, gamma, L]
 
-    F = Fr(rR) @ F_DFB_matrix(alpha_prime_DFB, delta_prime_DFB, kappa0, gamma, L0) @ F_DFB_matrix(alpha_prime_DFB, delta_prime_DFB, kappa0, gamma, L0) @ np.linalg.inv(Fr(rL))
+    #### F_DFB_matrix Input = [kappa, gamma, L]
+    F = Fr(rR) @ F_DFB_matrix(alpha_prime_DFB, delta_prime_DFB, kappa0, gamma, L0) @ Fp(theta) @ F_DFB_matrix(alpha_prime_DFB, delta_prime_DFB, kappa0, gamma, L0) @ Fp(phiL) @ np.linalg.inv(Fr(rL))
     return F
 
 ### See Li 2003 - 
@@ -80,7 +83,14 @@ def Solver_Loop(inputs, num_Modes):
     L = inputs[2]
     rR = inputs[3]
     rL = inputs[4]
-        
+    Lambda = inputs[5]
+    phiL = inputs[6]
+    theta = inputs[7]
+    
+    gamma_DFB = lambda kappa, alpha, delta: np.sqrt((kappa**2) + (alpha + 1j*delta)**2 ) 
+    alpha_prime = lambda alpha, zeta: alpha - np.imag(zeta)
+    delta_prime = lambda delta, zeta: delta + np.real(zeta)
+    
     for j in np.arange(0, np.ceil(np.abs(np.imag(kappa0)) * L)* 2 +5, 0.3):
         
         for i in np.arange(-max(np.ceil(np.abs(np.real(kappa0)) * L) + 20, 20), 
@@ -91,7 +101,7 @@ def Solver_Loop(inputs, num_Modes):
             guess_all.append(guess)
             norm_guess = np.linalg.norm(Fvec_solv(guess, *inputs))
             norm_guess_all.append(norm_guess)
-            ### Converting to mm^-1 (eventually convert everything to cm)
+            ### Arbitrarily setting min_Fval high
             min_Fval = max(300, np.abs(kappa0)**2 * 10)
             if not alpha0 or guess[0] < np.min(alpha0):
                 min_Fval *= 100
@@ -100,7 +110,11 @@ def Solver_Loop(inputs, num_Modes):
             if norm_guess < min_Fval:
                 solution, info, ier, mesg = fsolve(Fvec_solv, guess, args=inputs, full_output=True, xtol=1E-20, epsfcn=1E-20)
 
-                ### If alpha0 is empty, or if the functions are not close enoguh to the target
+                if ier < 0 or np.linalg.norm(info['fvec'], 2) > 1e-5:
+                    #print(f"Fval = {np.linalg.norm(info['fvec'], 2)}")
+                    continue
+
+                ### If alpha0 is empty, or if the functions are not close enough to the target
                 ### "In summary, the expression is used to determine if the current solution found by fsolve is essentially a duplicate of any solution found in previous iterations, based on a specified tolerance (0.01). If it returns True, the current solution is very close to at least one previously found solution."
                 if not alpha0 or not np.any(np.all(np.abs(np.vstack([alpha0, delta]).T - solution) < 0.01, axis=1)):
                     alpha0.append(solution[0])
@@ -148,7 +162,7 @@ def plot_mode_spectrum(k0, wavelength, Lambda, alpha_m, delta_m):
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
-def Solve(i, j, k, L, l, wavelength, Lambda, derived_values, rR, rL, num_Modes, Plot_SWEEP, num_Z):
+def Solve(i, j, k, L, l, wavelength, Lambda, derived_values, rR, rL, num_Modes, Plot_SWEEP, num_Z, cleave_phase_shift, pi_phase_shift, r_DFB_DBR):
     k0 = 2 * np.pi / wavelength
     K0 = np.pi / Lambda
     
@@ -171,7 +185,7 @@ def Solve(i, j, k, L, l, wavelength, Lambda, derived_values, rR, rL, num_Modes, 
     L2 = L1
 
     ### Inputs set in the model, passed into the function, not solved for.
-    inputs = (kappa_DFB, zeta_DFB, L1, rR, rL, asurf_DFB, Lambda)
+    inputs = (kappa_DFB, zeta_DFB, L1, rR, rL, asurf_DFB, Lambda, cleave_phase_shift, pi_phase_shift)
 
     ### Initial guess for alpha, deltak, which are solved for by fsolve
     ### Solving with Fvec_solv, i.e. transfer matrix method
