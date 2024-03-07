@@ -16,7 +16,6 @@ def sort_Data_Infinite(file_path):
             data.append(values)
     return np.array(data, dtype=object)
     
-
 def sort_nd(data, N, num_modes=None):
     # Determine unique values in the first N columns and their sizes
     params = [np.unique(data[:, n]) for n in range(N)]

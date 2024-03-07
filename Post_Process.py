@@ -2,7 +2,51 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
+def find_results_Args(params):
 
+    i_p = params['results_values'][0]
+    j_p = params['results_values'][1]
+    k_p = params['results_values'][2]
+    
+    ### Finding the index in ct, gh, dc that matches
+    differences = np.abs(np.array(params['cladding_thickness']) - i_p)    
+    i_c = np.argmin(differences) 
+    ### If error is more than floating point
+    if params['cladding_thickness'][i_c] - i_p > 0.001:
+        raise Exception(f"for index {i_c} in cladding thickness, the best match is {params['cladding_thickness'][i_c]}, which does not meet the precision requirement.")
+            
+    differences = np.abs(np.array(params['grating_height']) - j_p)    
+    j_c = np.argmin(differences)
+    ### If error is more than floating point
+    if params['grating_height'][j_c] - j_p > 0.001:
+        raise Exception(f"for index {j_c} in grating_height, the best match is {params['grating_height'][j_c]}, which does not meet the precision requirement.")
+
+    differences = np.abs(np.array(params['duty_cycle']) - k_p)    
+    k_c = np.argmin(differences)        
+    ### If error is more than floating point
+    if params['duty_cycle'][k_c] - k_p > 0.001:
+        raise Exception(f"for target {k_p} in duty cycle, the best match is {params['duty_cycle'][k_c]}, which does not meet the precision requirement.")
+
+    ### Finding the index in the results (via params_indices) that matches 
+    ### Since the original indices are stored, I can just use the same method to find the correct index (i.e. if index 17 is found, search for the results 
+    ### index that = 17)
+    i_r = np.argmin(params['params_indices'][0] - i_c)
+        ### This won't happen if the results_value is in the sweep results
+    if params['params_indices'][0][i_r] - i_c > 0.5:
+        raise Exception(f"For cladding thickness results target {i_p}, with target index {i_c}, closest match is {i_r}, and not in results.")
+    
+    j_r = np.argmin(params['params_indices'][1] - j_c)
+        ### This won't happen if the results_value is in the sweep results
+    if params['params_indices'][1][j_r] - j_c > 0.5:
+        raise Exception(f"For grating height results target {j_p}, with target index {j_c}, closest match is {j_r}, and not in results.")
+    
+    k_r = np.argmin(params['params_indices'][2] - k_c)
+        ### This won't happen if the results_value is in the sweep results
+    if params['params_indices'][2][k_r] - k_c > 0.5:
+        raise Exception(f"For duty cycle results target {k_p}, with target index {k_c}, closest match is {k_r}, and not in results.")
+    
+    
+    return i_r, j_r, k_r, i_c, j_c, k_c
 
 def plot_mode_spectrum(detune_plot, gth, title='Mode Spectrum', xlabel='Detuning (Angstroms)', ylabel='g_{th} (cm^{-1})'):
     plt.figure()
@@ -350,12 +394,10 @@ def default_Calculations(Data, sweep):
     
     ### We have a full 2D plot for each design parameter combination, so these indices are chosen by 'results_indices'
     params_indices = Data['params_indices']
-    results_indices = Data['results_indices']
+    results_indices = find_results_Args(Data)
     plot_Results=Data['plot_Results'] ### Whether to plot the countour plots and mode spectrum
-    plot_Indices=Data['plot_Indices'] ### Whether to plot the mesh showing indices (in order to find the right index for the 'results_indices' parameter.)
     
     if sweep:
-        plot_Indices = False
         plot_Results = False
     
     L = Data['L'] ### cm used here, not mm
@@ -389,9 +431,10 @@ def default_Calculations(Data, sweep):
     kappa = np.array(Data['kappa_DFB'])
     ### Let's say we only care about the central 5 indices in a sweep with 100 different points - this allows us to choose only the central indices
     ### Same structure as in EEDFB_Finite_Mode_Solver
-    shifted_indices = [results_indices[0] - params_indices[0][0], results_indices[1] - params_indices[1][0], results_indices[2] - params_indices[2][0]]
     
-    delta = Data['delta_m_all'][shifted_indices[0], shifted_indices[1], shifted_indices[2]] ### Detuning for the mode spectrum of the design at [results_indices]
+    #results_indices = [results_indices[0] - params_indices[0][0], results_indices[1] - params_indices[1][0], results_indices[2] - params_indices[2][0]]
+    
+    delta = Data['delta_m_all'][results_indices[3], results_indices[4], results_indices[5]] ### Detuning for the mode spectrum of the design at [results_indices]
     valid_mask = ~np.isnan(alpha_m) ### Only performing calculations on indices where a mode was found. np.NaN will raise an error if we try to run element-wise 
     
     ### Default calculations
@@ -438,12 +481,12 @@ def default_Calculations(Data, sweep):
     PmaxWPE_est_CW = np.where(valid_mask, PmaxWPE_est * CW_Scaling_Factor, np.NaN)
        
     detune_plot = (2 * np.pi / (k0 + (delta / (wavelength/Lambda))) - wavelength) * 1e8
-    gth_plot = gth[shifted_indices[0], shifted_indices[1], shifted_indices[2]]
+    gth_plot = gth[results_indices[3], results_indices[4], results_indices[5]]
     
     ### It would probably be best to compare results and check which mode we want during post-processing -> GUI prompt to select mode index 
     ### based on field profile.
     mode_index = 0
-    Guided_plot = Data['Guided_export_all'][shifted_indices[0], shifted_indices[1], shifted_indices[2], mode_index]
+    Guided_plot = Data['Guided_export_all'][results_indices[3], results_indices[4], results_indices[5], mode_index]
 
     # for i in range(len(Data['cladding_thickness'])):
     #     for j in range(len(Data['grating_height'])):
@@ -501,43 +544,37 @@ def default_Calculations(Data, sweep):
 
     params_indices = Data['params_indices']
     
-    cladding_thickness = Data['cladding_thickness']
-    cladding_thickness = cladding_thickness[params_indices[0][0]:params_indices[0][1]]
-    grating_height = Data['grating_height']
-    grating_height = grating_height[params_indices[1][0]:params_indices[1][1]]
-    
-    duty_cycle_indices = np.arange(params_indices[2][0], params_indices[2][1])
+    cladding_thickness = np.array(Data['cladding_thickness'])
+    cladding_thickness = cladding_thickness[params_indices[0]]
+    grating_height = np.array(Data['grating_height'])
+    grating_height = grating_height[params_indices[1]]
+    duty_cycle = results_indices[5]
         
     if plot_Results:
         
         ### Comment this out for future sims, z should be stored in z_all
         z = np.linspace(0, 2*Data['L'], Data['num_Z'])
-        
         plot_mode_spectrum(detune_plot, gth_plot)
-        #for n in range(20):
-        #    plot_field_intensity(z, Guided_plot[n], Data['L'], f'Field Profile for mode index {n} - Intensity R^2 + S^2')
+
         plot_field_intensity(z, Guided_plot, Data['L'], f'Field Profile - Intensity R^2 + S^2')
-        #plot_field_profile_real
-        #plot_field_profile_abs
-        
-        
-        for k in duty_cycle_indices:
-            ### Contour Plots
-            X, Y = np.meshgrid(cladding_thickness, grating_height)
-            contour_plot(X, Y, tau_photon[:,:,k,mode_index].T * 1e12, f"Photon Lifetime for duty cycle = {Data['duty_cycle'][k]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Photon Lifetime (ps)')
-            contour_plot(X, Y, eta_s_est[:,:,k,mode_index].T, f"Estimated slope efficiency for for duty cycle = {Data['duty_cycle'][k]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Slope Efficiency (W/A)')
-            contour_plot(X, Y, del_gth[:,:,k].T, f"Intermodal discrimination for duty cycle = {Data['duty_cycle'][k]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Intermodal discrimination cm^-1')
-            contour_plot(X, Y, Jth[:,:,k,mode_index].T, f"Threshold current density for duty cycle = {Data['duty_cycle'][k]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Threshold current density kA/cm^2')
-            contour_plot(X, Y, Pmax_est[:,:,k,mode_index].T, f"Pmax for duty cycle = {Data['duty_cycle'][k]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Pmax (W)')
-            contour_plot(X, Y, AReff[:,:,k,mode_index].T , f"AReff for duty cycle = {Data['duty_cycle'][k]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'AReff')
-            contour_plot(X, Y, S0gacterm[:,:,k,mode_index].T /(2*np.pi), f"S0Gac term for duty cycle = {Data['duty_cycle'][k]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'S0Gac term (Hz)')
-            contour_plot(X, Y, Homega[:,:,k,mode_index].T, f"Homega for duty cycle = {Data['duty_cycle'][k]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Homega')
-            contour_plot(X, Y, Homega_1[:,:,k,mode_index].T, f"Homega Pulsed for duty cycle = {Data['duty_cycle'][k]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Homega Pulsed')
-            contour_plot(X, Y, Homega_2[:,:,k,mode_index].T, f"Homega Pulsed+WPE for duty cycle = {Data['duty_cycle'][k]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Homega Pulsed+WPE')
-            contour_plot(X, Y, Homega_3[:,:,k,mode_index].T, f"Homega CW for duty cycle = {Data['duty_cycle'][k]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Homega CW')
-            contour_plot(X, Y, Homega_4[:,:,k,mode_index].T, f"Homega CW+WPE for duty cycle = {Data['duty_cycle'][k]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Homega CW+WPE')
-            contour_plot(X, Y, alpha_m[:,:,k,mode_index].T, f"Modal loss for duty cycle = {Data['duty_cycle'][k]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Modal loss cm^-1')
-            contour_plot(X, Y, kappaL[:,:,k].T, f"Kappa * L for duty cycle = {Data['duty_cycle'][k]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'kappa * L')
+
+        ### Contour Plots
+        X, Y = np.meshgrid(cladding_thickness, grating_height)
+        contour_plot(X, Y, tau_photon[:,:,duty_cycle,mode_index].T * 1e12, f"Photon Lifetime for duty cycle = {Data['duty_cycle'][results_indices[5]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Photon Lifetime (ps)')
+        contour_plot(X, Y, eta_s_est[:,:,duty_cycle,mode_index].T, f"Estimated slope efficiency for for duty cycle = {Data['duty_cycle'][results_indices[5]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Slope Efficiency (W/A)')
+        contour_plot(X, Y, del_gth[:,:,duty_cycle].T, f"Intermodal discrimination for duty cycle = {Data['duty_cycle'][results_indices[5]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Intermodal discrimination cm^-1')
+        contour_plot(X, Y, Jth[:,:,duty_cycle,mode_index].T, f"Threshold current density for duty cycle = {Data['duty_cycle'][results_indices[5]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Threshold current density kA/cm^2')
+        contour_plot(X, Y, Pmax_est[:,:,duty_cycle,mode_index].T, f"Pmax for duty cycle = {Data['duty_cycle'][results_indices[5]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Pmax (W)')
+        contour_plot(X, Y, AReff[:,:,duty_cycle,mode_index].T , f"AReff for duty cycle = {Data['duty_cycle'][results_indices[5]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'AReff')
+        contour_plot(X, Y, alpha_m[:,:,duty_cycle,mode_index].T , f"Fundamental mode loss for duty cycle = {Data['duty_cycle'][results_indices[5]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Alpha')
+        contour_plot(X, Y, S0gacterm[:,:,duty_cycle,mode_index].T /(2*np.pi), f"S0Gac term for duty cycle = {Data['duty_cycle'][results_indices[5]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'S0Gac term (Hz)')
+        contour_plot(X, Y, Homega[:,:,duty_cycle,mode_index].T, f"Homega for duty cycle = {Data['duty_cycle'][results_indices[5]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Homega')
+        contour_plot(X, Y, Homega_1[:,:,duty_cycle,mode_index].T, f"Homega Pulsed for duty cycle = {Data['duty_cycle'][results_indices[5]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Homega Pulsed')
+        contour_plot(X, Y, Homega_2[:,:,duty_cycle,mode_index].T, f"Homega Pulsed+WPE for duty cycle = {Data['duty_cycle'][results_indices[5]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Homega Pulsed+WPE')
+        contour_plot(X, Y, Homega_3[:,:,duty_cycle,mode_index].T, f"Homega CW for duty cycle = {Data['duty_cycle'][results_indices[5]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Homega CW')
+        contour_plot(X, Y, Homega_4[:,:,duty_cycle,mode_index].T, f"Homega CW+WPE for duty cycle = {Data['duty_cycle'][results_indices[5]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Homega CW+WPE')
+        contour_plot(X, Y, alpha_m[:,:,duty_cycle,mode_index].T, f"Modal loss for duty cycle = {Data['duty_cycle'][results_indices[5]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Modal loss cm^-1')
+        contour_plot(X, Y, kappaL[:,:,duty_cycle].T, f"Kappa * L for duty cycle = {Data['duty_cycle'][results_indices[5]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'kappa * L')
         
         plt.show()
 
@@ -547,18 +584,18 @@ def default_Calculations(Data, sweep):
 #            'tau_photon', 'tau_stim_4', 'Guided_plot_abs'
 # ]
     return (Data['rR'], 
-            Data['duty_cycle'][results_indices[2]], 
-            Data['cladding_thickness'][results_indices[0]], 
-            Data['grating_height'][results_indices[1]], 
-            PmaxWPE_est_CW[shifted_indices[0], shifted_indices[1], shifted_indices[2], mode_index], 
-            np.abs(Data['kappa_DFB'][shifted_indices[0]][shifted_indices[1]][shifted_indices[2]]) * Data['L'],
-            S0gacterm[shifted_indices[0], shifted_indices[1], shifted_indices[2], mode_index], 
-            AReff[shifted_indices[0], shifted_indices[1], shifted_indices[2], mode_index],
-            Homega_4[shifted_indices[0], shifted_indices[1], shifted_indices[2], mode_index], 
-            alpha_m[shifted_indices[0], shifted_indices[1], shifted_indices[2], mode_index], 
-            Jth[shifted_indices[0], shifted_indices[1], shifted_indices[2], mode_index], 
-            del_gth[shifted_indices[0], shifted_indices[1], shifted_indices[2]], 
-            eta_s_est[shifted_indices[0], shifted_indices[1], shifted_indices[2], mode_index], 
-            tau_photon[shifted_indices[0], shifted_indices[1], shifted_indices[2], mode_index], 
-            tau_stim_4[shifted_indices[0], shifted_indices[1], shifted_indices[2], mode_index], 
+            Data['duty_cycle'][results_indices[5]], 
+            Data['cladding_thickness'][results_indices[3]], 
+            Data['grating_height'][results_indices[4]], 
+            PmaxWPE_est_CW[results_indices[3], results_indices[4], results_indices[5], mode_index], 
+            np.abs(Data['kappa_DFB'][results_indices[3]][results_indices[4]][results_indices[5]]) * Data['L'],
+            S0gacterm[results_indices[3], results_indices[4], results_indices[5], mode_index], 
+            AReff[results_indices[3], results_indices[4], results_indices[5], mode_index],
+            Homega_4[results_indices[3], results_indices[4], results_indices[5], mode_index], 
+            alpha_m[results_indices[3], results_indices[4], results_indices[5], mode_index], 
+            Jth[results_indices[3], results_indices[4], results_indices[5], mode_index], 
+            del_gth[results_indices[3], results_indices[4], results_indices[5]], 
+            eta_s_est[results_indices[3], results_indices[4], results_indices[5], mode_index], 
+            tau_photon[results_indices[3], results_indices[4], results_indices[5], mode_index], 
+            tau_stim_4[results_indices[3], results_indices[4], results_indices[5], mode_index], 
             np.abs(Guided_plot[-1]))

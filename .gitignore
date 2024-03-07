@@ -1,6 +1,7 @@
 *.txt
+*.xlsx
 
 !20220216_5L_EEDFB_cap_GH_finesweep_shallowgratings_combine.txt
-
+!infinitegrating_9.9um_Ti-Ag_EE_1storder_60stg_Huilong_Active_FINAL.txt
 *.json
 !JSON_Template.json

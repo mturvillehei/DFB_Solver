@@ -16,7 +16,7 @@ In COMSOL, a 3D parametric sweep is performed - the values populate the first th
 Raw data is output as a text file. Place this text file in the Data folder, and update the corresponding template JSON file with the filename.
 Additionally, update any other parameters. Parametric sweeps over multiple config files/multiple parameters can be additionally handled by wrapping the Main() function.
 
-Within Main, data is loaded.
+Within EEDFB_Finite_Mode_Solver, data is loaded.
 
 Data is sorted via Sort_Data_Infinite.py
 
@@ -28,3 +28,6 @@ Coupled_Wave_Solver() calculates the resultant field profiles
 Data is output for each point in the parametric sweep, converted to lists, and then stored in the original JSON file.
 
 Upon repeat execution, the solve() function isn't re-executed. Data instead is loaded and input into the post-processing steps for parameter calculation.
+
+Parametric sweeps of non-trivial values are performed inside param_Sweep, creating a new JSON output file for each point in the sweep.
+Parametric sweeps of trivial values (i.e. CT, GH, DC) are performed in results_Sweep. This enables collecting a table of results for linear plotting.

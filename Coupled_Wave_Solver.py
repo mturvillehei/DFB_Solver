@@ -99,7 +99,7 @@ def Coupled_Wave_Solver_EEDFB(alpha_m, delta_m, kappa_DFB, zeta_DFB, L, l, L_tra
     ### Compiled coupled-mode solutions. Refactored from the Matlab script.
     def Sg(z, params):
         if z <= params.l1:
-            return Fdfb_R(params.kappa2, params.alpha00, params.delta0, params.gamma_DBR, params.R0, params.S0, z)
+            return Fdfb_S(params.kappa2, params.alpha00, params.delta0, params.gamma_DBR, params.R0, params.S0, z)
         elif z <= params.l1 + params.L_trans:
             return Fdfb_S(params.kappa2, params.alpha3, params.delta3, params.gamma_trans, params.Rt10, params.St10, z - params.l1)
         elif z <= params.l1 + params.L_trans + params.L1:
