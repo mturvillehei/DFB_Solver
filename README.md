@@ -1,8 +1,6 @@
 # DFB_Solver
 
-#Based off of the Transfer Matrix Model from S. Li et al., IEEE J. Sel. Topics. Quantum Electron. 9, 1153 (2003)
-#Code originally written by C. Siegler in .m for the Mawst/Botez lab. Converted to Python and wrapped.
-#Unless specified otherwise, znits are cm
+#Based off of the Transfer Matrix Model from S. Li et al., IEEE J. Sel. Topics. Quantum Electron. 9, 1153 (2003). Code originally written by C. Siegler in .m for the Mawst/Botez lab. Converted to Python and wrapped. Unless specified otherwise, units are cm
 
 Solver for COMSOL outputs, with some assumptions on the output shape from COMSOL. Based on the original Matlab script. Benchmarked --> 7-10x performance increase per iteration!
 
