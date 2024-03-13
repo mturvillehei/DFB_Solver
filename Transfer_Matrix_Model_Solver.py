@@ -3,8 +3,8 @@ import scipy.io as sio
 import scipy as sc
 from scipy.optimize import fsolve
 import numpy as np
-from Post_Process import plot_mode_spectrum
-from Post_Process import plot_field_intensity
+from Post_Process_EE import plot_mode_spectrum
+from Post_Process_EE import plot_field_intensity
 
 ### Gamma calc
 gamma_DFB = lambda kappa, alpha, delta: np.sqrt((kappa**2) + (alpha + 1j*delta)**2 ) 
@@ -58,6 +58,16 @@ def F_DFB(alpha, delta, kappa0, zeta0, L0, rR, rL, asurf, Lambda, phiL, theta):
     F = Fr(rR) @ F_DFB_matrix(alpha_prime_DFB, delta_prime_DFB, kappa0, gamma, L0) @ Fp(theta) @ F_DFB_matrix(alpha_prime_DFB, delta_prime_DFB, kappa0, gamma, L0) @ Fp(phiL) @ np.linalg.inv(Fr(rL))
     return F
 
+def F_DFB_SE(alpha, delta, kappa0, zeta0, L0, rR, rL, asurf, Lambda, phiL, theta):
+
+    alpha_prime_DFB = alpha_prime(alpha, zeta0) ### Converting to alpha prime, delta prime
+    delta_prime_DFB = delta_prime(delta, zeta0)
+    gamma = gamma_DFB(kappa0, alpha_prime_DFB, delta_prime_DFB)
+
+    #### F_DFB_matrix Input = [kappa, gamma, L]
+    F = Fr(rR) @ F_DFB_matrix(alpha_prime_DFB, delta_prime_DFB, kappa0, gamma, L0) @ Fp(theta) @ F_DFB_matrix(alpha_prime_DFB, delta_prime_DFB, kappa0, gamma, L0) @ Fp(phiL) @ np.linalg.inv(Fr(rL))
+    return F
+
 ### See Li 2003 - 
 ### Essentially, the lasing condition is that with no incoming light, we still generate outcoming light. F22 is returned as the condition
 def F22(F):
@@ -72,7 +82,10 @@ def Fvec_solv(x, *args):
 
 #### In the Matlab script, this is called 'Find Modes', and is called to execute the transfer matrix method.
 #### Following execution, results are passed into the coupled wave solver.   
-def Solver_Loop(inputs, num_Modes):
+
+### The SE mode solver is essentially the same - only change is the inclusion of Ll 
+
+def Solver_Loop(inputs, num_Modes, Ll = 0):
     alpha0 = []
     delta = []
     guess_all = []
@@ -80,6 +93,8 @@ def Solver_Loop(inputs, num_Modes):
     #inputs = (kappa_DFB, zeta_DFB, L1, rR, rL)
     kappa0 = inputs[0]
     zeta0 = inputs[1]
+    if Ll == 0:
+        Ll = inputs[2]
     L = inputs[2]
     rR = inputs[3]
     rL = inputs[4]
@@ -93,11 +108,11 @@ def Solver_Loop(inputs, num_Modes):
     
     for j in np.arange(0, np.ceil(np.abs(np.imag(kappa0)) * L)* 2 +5, 0.3):
         
-        for i in np.arange(-max(np.ceil(np.abs(np.real(kappa0)) * L) + 20, 20), 
-                            max(np.ceil(np.abs(np.real(kappa0)) * L) + 10, 20), 0.3):
+        for i in np.arange(-max(np.ceil(np.abs(np.real(kappa0)) * Ll) + 20, 20), 
+                            max(np.ceil(np.abs(np.real(kappa0)) * Ll) + 10, 20), 0.3):
             
             ### Identifying guess from kappa, zeta (iterating through possible values up to 2imag_kappa + 5, real_kapp + 10
-            guess = [j / L, i / L - np.real(zeta0)]
+            guess = [j / L, i / Ll - np.real(zeta0)]
             guess_all.append(guess)
             norm_guess = np.linalg.norm(Fvec_solv(guess, *inputs))
             norm_guess_all.append(norm_guess)
@@ -162,7 +177,7 @@ def plot_mode_spectrum(k0, wavelength, Lambda, alpha_m, delta_m):
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
-def Solve(i, j, k, L, l, wavelength, Lambda, derived_values, rR, rL, num_Modes, Plot_SWEEP, num_Z, cleave_phase_shift, pi_phase_shift, r_DFB_DBR):
+def Solve_EE(i, j, k, L, l, wavelength, Lambda, derived_values, rR, rL, num_Modes, Plot_SWEEP, num_Z, cleave_phase_shift, pi_phase_shift, r_DFB_DBR):
     k0 = 2 * np.pi / wavelength
     K0 = np.pi / Lambda
     
@@ -192,6 +207,57 @@ def Solve(i, j, k, L, l, wavelength, Lambda, derived_values, rR, rL, num_Modes, 
     alpha_m, delta_m = Solver_Loop(inputs, num_Modes)    
     print(f"Number of modes found: {len(alpha_m)}")
 
+
+
+    
+    if Plot_SWEEP:
+        plot_mode_spectrum(k0, wavelength, Lambda, alpha_m, delta_m)
+        
+    return(alpha_m, delta_m, kappa_DFB, zeta_DFB, asurf_DFB, kappa_DBR, zeta_DBR, asurf_DBR)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+def Solve_SE(i, j, k, L, l, wavelength, Lambda, derived_values, rR, rL, num_Modes, Plot_SWEEP, num_Z, cleave_phase_shift, pi_phase_shift, r_DFB_DBR):
+    k0 = 2 * np.pi / wavelength
+    K0 = np.pi / Lambda
+    
+    ### Grabbing values
+    deltak_DFB = derived_values['deltak_DFB'][i,j,k]
+    alpha_DFB = derived_values['alpha_DFB'][i,j,k]
+    deltak_DBR = derived_values['deltak_DBR'][i,j,k]
+    alpha_DBR = derived_values['alpha_DBR'][i,j,k]
+    asurf_DFB = derived_values['asurf_DFB'][i,j,k]
+    asurf_DBR = derived_values['asurf_DBR'][i,j,k]
+    kappa_DFB = derived_values['kappa_DFB'][i,j,k]
+    zeta_DFB = derived_values['zeta_DFB'][i,j,k]
+    kappa_DBR = derived_values['kappa_DBR'][i,j,k]
+    zeta_DBR = derived_values['zeta_DBR'][i,j,k]
+
+
+    alpha_extra_dbr = alpha_DBR - alpha_DFB
+    DFB_Periods = round(L/(Lambda))
+    DBR_Periods = round(l/(Lambda))
+    duty_cycle = derived_values['params'][2][k]
+    
+    ### reassigning L, l to account for rounding errors.
+    L1 = DFB_Periods * Lambda / 2
+    L2 = L1
+    L = L1 + L2
+    l1 = DBR_Periods * Lambda
+    l2 = l1
+    l = l1 + l2
+    L_trans = 12e-4 ### 12 micron transition region
+    Ll = L + L_trans*2 ### Full DFB+DBR+Transition region 
+    ztheta = pi_phase_shift * Lambda / (2 * np.pi)
+    Ll += ztheta
+    
+    ### Inputs set in the model, passed into the function, not solved for.
+    inputs = (kappa_DFB, zeta_DFB, L1, L2, L, l1, l2, l, L_trans, Ll, rR, rL, asurf_DFB, Lambda, cleave_phase_shift, pi_phase_shift)
+
+    ### Initial guess for alpha, deltak, which are solved for by fsolve
+    ### Solving with Fvec_solv, i.e. transfer matrix method
+    alpha_m, delta_m = Solver_Loop(inputs, num_Modes, Ll = Ll)    
+    print(f"Number of modes found: {len(alpha_m)}")
     
     if Plot_SWEEP:
         plot_mode_spectrum(k0, wavelength, Lambda, alpha_m, delta_m)

@@ -1,12 +1,12 @@
 import sys
-from EEDFB_Finite_Mode_Solver import EEDFB_Solver
-from EEDFB_Finite_Mode_Solver import load_parameters
-from EEDFB_Finite_Mode_Solver import save_parameters
-from Post_Process import default_Calculations, find_results_Args
+from DFB_Finite_Mode_Solver import DFB_Solver
+from DFB_Finite_Mode_Solver import load_parameters
+from DFB_Finite_Mode_Solver import save_parameters
+from Post_Process_EE import default_Calculations, find_results_Args
+from Post_Process_EE import index_Plot
 import os
 import pandas as pd
 import time
-from Post_Process import index_Plot
 import numpy as np
 ### This is explicitly for varying a trivial parameters (so duty cycle, cladding thickness, or grating height)
 ### Best method is to run EEDFB_Finite_Mode_Solver.py first, find the indices to target, and then run this to grab the csv file export.
@@ -17,7 +17,7 @@ def Results_Sweep(filename_original):
 
     headers = ['rR', 'duty_cycle', 'cladding_thickness', 
             'grating_height', 'PmaxWPE_est_CW', 'kappa_DFB_L', 'S0gacterm', 
-            'AReff', 'Homega_4', 'alpha_m', 'Jth', 'del_gth', 'eta_s_est', 
+            'AReff', 'Homega_4', 'alpha_m', 'alpha_opt', 'Jth', 'del_gth', 'eta_s_est', 
             'tau_photon', 'tau_stim_4', 'Field_end'
     ]
     data = {header: [] for header in headers}
@@ -49,7 +49,7 @@ def Results_Sweep(filename_original):
                     results = default_Calculations(params, False)
                 else:
                     save_parameters(params, "Data/" + filename_original)
-                    results = EEDFB_Solver("Data/" + filename_original)
+                    results = DFB_Solver("Data/" + filename_original)
                     params = load_parameters("Data/" + filename_original)
                                     
                 for header, result in zip(headers, results):

@@ -1,8 +1,8 @@
 import time
 import sys
-from EEDFB_Finite_Mode_Solver import EEDFB_Solver
-from EEDFB_Finite_Mode_Solver import load_parameters
-from EEDFB_Finite_Mode_Solver import save_parameters
+from DFB_Finite_Mode_Solver import DFB_Solver
+from DFB_Finite_Mode_Solver import load_parameters
+from DFB_Finite_Mode_Solver import save_parameters
 import json
 import pandas as pd
 import os
@@ -40,7 +40,7 @@ def Parameter_Sweep(filename_original):
         save_parameters(params, "Data/" + filename_original)
         
         
-        results = EEDFB_Solver("Data/" + filename_original, params_sweep)
+        results = DFB_Solver("Data/" + filename_original, params_sweep)
         data[param_label].append(val)
 
         #print(len(results))
