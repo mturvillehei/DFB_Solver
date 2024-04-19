@@ -137,7 +137,6 @@ def DFB_Solver(json_filepath, params_sweep = False):
         params['params_indices'] = [i_params, j_params, k_params]
         
     
-        #alpha_m_all = np.zeros((params_indices[0][1] - params_indices[0][0], params_indices[1][1] - params_indices[1][0], params_indices[2][1] - params_indices[2][0], num_Modes))
         alpha_m_all = np.zeros((len(i_params), len(j_params), len(k_params), num_Modes))
         
         delta_m_all = np.zeros((len(i_params), len(j_params), len(k_params), num_Modes))
@@ -195,7 +194,7 @@ def DFB_Solver(json_filepath, params_sweep = False):
                               Lambda, num_Z, kappa_DBR, zeta_DBR, asurf_DBR, Gamma_ele, 
                               cleave_phase_shift, pi_phase_shift, r_DFB_DBR, plot_fields, kappa_trans, zeta_trans, asurf_trans_[0])            
                         
-                        
+                    #### EE DFB Calculations
                     else:
                         (alpha_m, delta_m, kappa_DFB, zeta_DFB, asurf_DFB, kappa_DBR, zeta_DBR, asurf_DBR) = Solve_EE(i_p, j_p, k_p, L, l, wavelength, Lambda, derived_values, rR, rL, num_Modes, plot_SWEEP, num_Z, cleave_phase_shift, pi_phase_shift, r_DFB_DBR)
                     
@@ -204,13 +203,10 @@ def DFB_Solver(json_filepath, params_sweep = False):
                               cleave_phase_shift, pi_phase_shift, r_DFB_DBR, plot_fields)
                         
                     ### Alpha_m contains the number of modes found
-                    ### Unused entries in _all are set to NaN for easier post-processing.
                     
                     print(f"Mode solver time elapsed is {time.time() - solver_time} seconds.") 
 
-                    #alpha_m_all[i - params_indices[0][0], j - params_indices[1][0], k - params_indices[2][0], :len(alpha_m)] = alpha_m 
                     alpha_m_all[i, j, k, :len(alpha_m)] = alpha_m 
-                    
                     alpha_m_all[i, j, k, len(alpha_m):] = np.NaN 
                     delta_m_all[i, j, k, :len(delta_m)] = delta_m
                     delta_m_all[i, j, k, len(delta_m):] = np.NaN 
@@ -295,8 +291,12 @@ def DFB_Solver(json_filepath, params_sweep = False):
 ### If you want to use CLI or the param_Sweep, make sure to comment out the explicit file declarations.
 if __name__ == "__main__":
     #filename = sys.argv[1]
-    #filename = "9.9um_60stg_Test_Against_Matlab.json"
-    filename = "DRS_4.9um_EEDFB_2-23-2024.json"
+    
+    #filename = "DRS_4.9um_EEDFB_3-25-2024_HigherLossSubstrate_1.5mm.json"
+   # filename = "9.45um_60stg_Ridgeguide_18um.json"
+#    filename = "9.45um_60stg_Ridgeguide_18um_param_sweep.json"
+    #filename = "9.9um_60stg_Ridgeguide_HighLoss.json"
+    filename = "DRS_4.59um_DRS_EEDFB_7.5mm_HRUC_4umWid.json"
     DFB_Solver("Data/" + str(filename))
 ### Run EEDFB_Solver initially to find the correct index values (set plot_Indices to 1 in the JSON file). Can be run from CLI by commenting out line 287 for 286
 ### Either let the execution complete, and move to results_Sweep
