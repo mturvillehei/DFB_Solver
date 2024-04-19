@@ -1,20 +1,19 @@
-import time
 import sys
 from DFB_Finite_Mode_Solver import DFB_Solver
 from DFB_Finite_Mode_Solver import load_parameters
 from DFB_Finite_Mode_Solver import save_parameters
-import json
 import pandas as pd
 import os
 import numpy as np
+
 ### This is explicitly for varying a non-trivial parameters (so not duty cycle, cladding thickness, or grating height)
 ### This only sweeps over the value in the params file 'results_indices'
 ### To vary DC, CT, GH, use results_Sweep.py
 
 def Parameter_Sweep(filename_original):
 
-    param_label = 'cleave_phase_shift'
-    param_values = np.arange(0, 2* np.pi, 2*np.pi * 0.05)
+    param_label = 'f'
+    param_values = np.arange(1000000000.0, 5000000000.0, 1000000000.0 * 0.2)
 
     headers = [ param_label, 'rR', 'duty_cycle', 'cladding_thickness', 
             'grating_height', 'PmaxWPE_est_CW', 'kappa_DFB_L', 'S0gacterm', 

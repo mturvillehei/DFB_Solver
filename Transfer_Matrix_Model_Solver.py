@@ -207,8 +207,6 @@ def Solve_EE(i, j, k, L, l, wavelength, Lambda, derived_values, rR, rL, num_Mode
     alpha_m, delta_m = Solver_Loop(inputs, num_Modes)    
     print(f"Number of modes found: {len(alpha_m)}")
 
-
-
     
     if Plot_SWEEP:
         plot_mode_spectrum(k0, wavelength, Lambda, alpha_m, delta_m)

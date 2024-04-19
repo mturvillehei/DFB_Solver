@@ -347,9 +347,15 @@ def contour_plot(x, y, z, title, xlabel, ylabel, cbar_label, xlim=None, levels=3
     [0.973, 0.9724, 0.0938],
     [0.9749, 0.9782, 0.0872],
     [0.9769, 0.9839, 0.0805]]
+    def onclick(event):
+        if event.inaxes == ax:
+            x, y = event.xdata, event.ydata
+            value = z[np.unravel_index(np.argmin(np.abs(x - x_grid) + np.abs(y - y_grid)), z.shape)]
+            plt.title(f"Clicked value: {value:.3f}")
+            plt.draw()
+
     parula_map = LinearSegmentedColormap.from_list('parula', cm_data)
     colormap = parula_map
-    
     fig, ax = plt.subplots()
     contour_set = ax.contourf(x, y, z, levels, cmap=colormap, linestyle='none')
     cbar = fig.colorbar(contour_set)
@@ -357,14 +363,21 @@ def contour_plot(x, y, z, title, xlabel, ylabel, cbar_label, xlim=None, levels=3
 
     if xlim is not None:
         ax.set_xlim(xlim)
-
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_title(title)
     ax.tick_params(labelsize=14)
     plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
-
     fig.tight_layout()
+
+    # Create grid of x and y values corresponding to the contour plot
+    x_grid, y_grid = np.meshgrid(np.linspace(x.min(), x.max(), z.shape[1]),
+                                np.linspace(y.min(), y.max(), z.shape[0]))
+
+    # Connect the onclick function to the figure
+    cid = fig.canvas.mpl_connect('button_press_event', onclick)
+
+    #plt.show()
 def index_Plot(cladding_thickness, grating_height):
     # Generating meshgrid for plotting
     X, Y = np.meshgrid(cladding_thickness, grating_height)
@@ -412,6 +425,7 @@ def default_Calculations(Data, sweep):
     HR = Data['HR'] ### HR percent on the back facet
     alpha_end_R = Data['alpha_end_R_all'] ### mirror loss, front facet
     alpha_end_L = Data['alpha_end_L_all'] ### mirror loss, back facet
+    alpha_end = Data['alpha_end_all']
     q = Data['q'] ### charge unit
     h = Data['h'] ### planck's
     c = Data['c'] ### speed of light
@@ -462,9 +476,6 @@ def default_Calculations(Data, sweep):
     Homega = np.where(valid_mask, np.sqrt(Hsquared), np.NaN)
     w_plot = np.arange(0, 2 * np.pi * 1e8, 2 * np.pi * 50e9)
     kappaL = np.where(valid_mask[:,:,:, 0], kappa * L, np.NaN)
-    # S0gacterm_plot = S0gacterm[:,:,:,1] ### Might have a dimension mismatch here?
-    # S0gacterm_plot_expanded = S0gacterm_plot[:,:,:,np.newaxis]
-    # wprime_plot = np.where(valid_mask[:,:,:,np.newaxis], w_plot / S0gacterm_plot_expanded, np.NaN)
     
     Area = L * Wid
     Imax = Jmax * Area * 1000
@@ -484,11 +495,6 @@ def default_Calculations(Data, sweep):
     ### based on field profile.
     mode_index = 0
     Guided_plot = Data['Guided_export_all'][results_indices[3], results_indices[4], results_indices[5], mode_index]
-
-    # for i in range(len(Data['cladding_thickness'])):
-    #     for j in range(len(Data['grating_height'])):
-    #         for k in range(len(Data['duty_cycle'])):
-    #             #print(gth[i])
 
     del_gth = np.zeros((gth.shape[0], gth.shape[1], gth.shape[2]))
     del_gth = gth[:,:,:,1] - gth[:,:,:,0]
@@ -557,29 +563,25 @@ def default_Calculations(Data, sweep):
 
         ### Contour Plots
         X, Y = np.meshgrid(cladding_thickness, grating_height)
-        contour_plot(X, Y, tau_photon[:,:,duty_cycle,mode_index].T * 1e12, f"Photon Lifetime for duty cycle = {Data['duty_cycle'][results_indices[2]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Photon Lifetime (ps)')
-        contour_plot(X, Y, eta_s_est[:,:,duty_cycle,mode_index].T, f"Estimated slope efficiency for for duty cycle = {Data['duty_cycle'][results_indices[2]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Slope Efficiency (W/A)')
-        contour_plot(X, Y, del_gth[:,:,duty_cycle].T, f"Intermodal discrimination for duty cycle = {Data['duty_cycle'][results_indices[2]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Intermodal discrimination cm^-1')
-        contour_plot(X, Y, Jth[:,:,duty_cycle,mode_index].T, f"Threshold current density for duty cycle = {Data['duty_cycle'][results_indices[2]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Threshold current density kA/cm^2')
-        contour_plot(X, Y, Pmax_est[:,:,duty_cycle,mode_index].T, f"Pmax for duty cycle = {Data['duty_cycle'][results_indices[2]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Pmax (W)')
-        contour_plot(X, Y, AReff[:,:,duty_cycle,mode_index].T , f"AReff for duty cycle = {Data['duty_cycle'][results_indices[2]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'AReff')
-        contour_plot(X, Y, alpha_m[:,:,duty_cycle,mode_index].T , f"First-order DFB mode loss for duty cycle = {Data['duty_cycle'][results_indices[2]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Alpha_m')
-        contour_plot(X, Y, alpha_opt[:,:,duty_cycle,mode_index].T , f"Total optical loss of the first-order DFB mode for duty cycle = {Data['duty_cycle'][results_indices[2]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Alpha_opt')
-        contour_plot(X, Y, S0gacterm[:,:,duty_cycle,mode_index].T /(2*np.pi), f"S0Gac term for duty cycle = {Data['duty_cycle'][results_indices[2]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'S0Gac term (Hz)')
-        contour_plot(X, Y, Homega[:,:,duty_cycle,mode_index].T, f"Homega for duty cycle = {Data['duty_cycle'][results_indices[2]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Homega')
-        contour_plot(X, Y, Homega_1[:,:,duty_cycle,mode_index].T, f"Homega Pulsed for duty cycle = {Data['duty_cycle'][results_indices[2]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Homega Pulsed')
-        contour_plot(X, Y, Homega_2[:,:,duty_cycle,mode_index].T, f"Homega Pulsed+WPE for duty cycle = {Data['duty_cycle'][results_indices[2]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Homega Pulsed+WPE')
-        contour_plot(X, Y, Homega_3[:,:,duty_cycle,mode_index].T, f"Homega CW for duty cycle = {Data['duty_cycle'][results_indices[2]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Homega CW')
-        contour_plot(X, Y, Homega_4[:,:,duty_cycle,mode_index].T, f"Homega CW+WPE for duty cycle = {Data['duty_cycle'][results_indices[2]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Homega CW+WPE')
-        contour_plot(X, Y, alpha_m[:,:,duty_cycle,mode_index].T, f"Modal loss for duty cycle = {Data['duty_cycle'][results_indices[2]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Modal loss cm^-1')
-        contour_plot(X, Y, kappaL[:,:,duty_cycle].T, f"Kappa * L for duty cycle = {Data['duty_cycle'][results_indices[2]]}", 'Cladding Thickness (um)', 'Grating_Height (um)', 'kappa * L')
+        contour_plot(X, Y, tau_photon[:,:,duty_cycle,mode_index].T * 1e12, f"Photon Lifetime", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Photon Lifetime (ps)')
+        contour_plot(X, Y, eta_s_est[:,:,duty_cycle,mode_index].T, f"Estimated slope efficiency", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Slope Efficiency (W/A)')
+        contour_plot(X, Y, del_gth[:,:,duty_cycle].T, f"Intermodal discrimination", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Intermodal discrimination cm^-1')
+        contour_plot(X, Y, Jth[:,:,duty_cycle,mode_index].T, f"Threshold current density", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Threshold current density kA/cm^2')
+        contour_plot(X, Y, Pmax_est[:,:,duty_cycle,mode_index].T, f"Pulsed output power", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Pmax (W)')
+        contour_plot(X, Y, AReff[:,:,duty_cycle,mode_index].T , f"AReff", 'Cladding Thickness (um)', 'Grating_Height (um)', 'AReff')
+        contour_plot(X, Y, alpha_m[:,:,duty_cycle,mode_index].T , f"First-order DFB mode loss", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Alpha_m')
+        contour_plot(X, Y, alpha_opt[:,:,duty_cycle,mode_index].T , f"Total optical loss of the first-order DFB mode", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Alpha_opt')
+        contour_plot(X, Y, S0gacterm[:,:,duty_cycle,mode_index].T /(2*np.pi), f"S0Gac term", 'Cladding Thickness (um)', 'Grating_Height (um)', 'S0Gac term (Hz)')
+        contour_plot(X, Y, Homega[:,:,duty_cycle,mode_index].T, f"Homega", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Homega')
+        contour_plot(X, Y, Homega_1[:,:,duty_cycle,mode_index].T, f"Homega Pulsed", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Homega Pulsed')
+        contour_plot(X, Y, Homega_2[:,:,duty_cycle,mode_index].T, f"Homega Pulsed+WPE", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Homega Pulsed+WPE')
+        contour_plot(X, Y, Homega_3[:,:,duty_cycle,mode_index].T, f"Homega CW", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Homega CW')
+        contour_plot(X, Y, Homega_4[:,:,duty_cycle,mode_index].T, f"Homega CW+WPE", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Homega CW+WPE')
+        contour_plot(X, Y, alpha_m[:,:,duty_cycle,mode_index].T, f"Modal loss", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Modal loss cm^-1')        
+        contour_plot(X, Y, alpha_end[:,:,duty_cycle,mode_index].T, f"Mirror loss all", 'Cladding Thickness (um)', 'Grating_Height (um)', 'loss cm^-1')
+        contour_plot(X, Y, kappaL[:,:,duty_cycle].T, f"Kappa * L", 'Cladding Thickness (um)', 'Grating_Height (um)', 'kappa * L')
         plt.show()
 
-# headers = ['rR', 'duty_cycle', 'cladding_thickness', 
-#            'grating_height', 'PmaxWPE_est_CW', 'kappa_DFB_L', 'S0gacterm', 
-#            'AReff', 'Homega_4', 'alpha_m', 'Jth', 'del_gth', 'eta_s_est', 
-#            'tau_photon', 'tau_stim_4', 'Guided_plot_abs'
-# ]
     return (Data['rR'], 
             Data['duty_cycle'][results_indices[5]], 
             Data['cladding_thickness'][results_indices[3]], 
