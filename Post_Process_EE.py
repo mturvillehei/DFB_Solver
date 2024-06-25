@@ -422,7 +422,7 @@ def default_Calculations(Data, sweep):
     ni = Data['ni'] ### internal efficiency
     NP = Data['NP'] ### number of stages
     F1 = Data['F1'] ### used for calculating slope efficiency. not sure where this is from 
-    HR = Data['HR'] ### HR percent on the back facet
+    HR = Data['HR'] ### HR percent on the back facet ### little r or big r?
     alpha_end_R = Data['alpha_end_R_all'] ### mirror loss, front facet
     alpha_end_L = Data['alpha_end_L_all'] ### mirror loss, back facet
     alpha_end = Data['alpha_end_all']
@@ -564,9 +564,11 @@ def default_Calculations(Data, sweep):
         ### Contour Plots
         X, Y = np.meshgrid(cladding_thickness, grating_height)
         contour_plot(X, Y, tau_photon[:,:,duty_cycle,mode_index].T * 1e12, f"Photon Lifetime", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Photon Lifetime (ps)')
+        contour_plot(X, Y, tau_stim_1[:,:,duty_cycle,mode_index].T * 1e12, f"Stimulated Lifetime (1)", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Stimulated Lifetime (ps)')
         contour_plot(X, Y, eta_s_est[:,:,duty_cycle,mode_index].T, f"Estimated slope efficiency", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Slope Efficiency (W/A)')
         contour_plot(X, Y, del_gth[:,:,duty_cycle].T, f"Intermodal discrimination", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Intermodal discrimination cm^-1')
         contour_plot(X, Y, Jth[:,:,duty_cycle,mode_index].T, f"Threshold current density", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Threshold current density kA/cm^2')
+        contour_plot(X, Y, Ith[:,:,duty_cycle,mode_index].T, f"Threshold current", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Threshold current density A')
         contour_plot(X, Y, Pmax_est[:,:,duty_cycle,mode_index].T, f"Pulsed output power", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Pmax (W)')
         contour_plot(X, Y, AReff[:,:,duty_cycle,mode_index].T , f"AReff", 'Cladding Thickness (um)', 'Grating_Height (um)', 'AReff')
         contour_plot(X, Y, alpha_m[:,:,duty_cycle,mode_index].T , f"First-order DFB mode loss", 'Cladding Thickness (um)', 'Grating_Height (um)', 'Alpha_m')

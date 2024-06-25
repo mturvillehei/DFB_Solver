@@ -166,7 +166,7 @@ def Coupled_Wave_Solver_EEDFB(alpha_m, delta_m, kappa_DFB, zeta_DFB, L, l, L_tra
     def Fdfb_S(kappa, alpha, delta, gamma, R, S, z):
         return (np.cosh(gamma*z) - np.sinh(gamma*z)*(alpha + 1j * delta) / gamma)*S + (-1j*kappa*np.sinh(gamma*z)/gamma)*R
 
-    Guided = lambda z, params: np.abs(Rg(z, params) ** 2) + np.abs(Sg(z, params) ** 2)
+    Guided = lambda z, params: np.abs(Rg(z, params)) ** 2 + np.abs(Sg(z, params)) ** 2
     Near = lambda z, params: np.abs(Sg(z, params) + Rg(z, params)) ** 2
     Near2 = lambda z, params: np.abs(Sn(z, params) + Rn(z, params)) ** 2
     Near_amp = lambda z, params: np.abs(Sn(z, params) + Rn(z, params))
@@ -433,7 +433,7 @@ def Coupled_Wave_Solver_SEDFB(alpha_m, delta_m, kappa_DFB, zeta_DFB, L, l, L_tra
     def Fdfb_S(kappa, alpha, delta, gamma, R, S, z):
         return (np.cosh(gamma*z) - np.sinh(gamma*z)*(alpha + 1j * delta) / gamma)*S + (-1j*kappa*np.sinh(gamma*z)/gamma)*R
 
-    Guided = lambda z, params: np.abs(Rg(z, params) ** 2) + np.abs(Sg(z, params) ** 2)
+    Guided = lambda z, params: np.abs(Rg(z, params)) ** 2 + np.abs(Sg(z, params)) ** 2
     Near = lambda z, params: np.abs(Sg(z, params) + Rg(z, params)) ** 2
     Near2 = lambda z, params: np.abs(Sn(z, params) + Rn(z, params)) ** 2
     Near_amp = lambda z, params: np.abs(Sn(z, params) + Rn(z, params))
