@@ -4,7 +4,6 @@ import scipy as sc
 from scipy.optimize import fsolve
 import numpy as np
 from Post_Process_EE import plot_mode_spectrum
-from Post_Process_EE import plot_field_intensity
 
 ### Gamma calc
 gamma_DFB = lambda kappa, alpha, delta: np.sqrt((kappa**2) + (alpha + 1j*delta)**2 ) 
@@ -177,21 +176,21 @@ def plot_mode_spectrum(k0, wavelength, Lambda, alpha_m, delta_m):
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
-def Solve_EE(i, j, k, L, l, wavelength, Lambda, derived_values, rR, rL, num_Modes, Plot_SWEEP, num_Z, cleave_phase_shift, pi_phase_shift, r_DFB_DBR):
+def Solve_EE(duty_cycle, L, l, wavelength, Lambda, derived_values, rR, rL, num_Modes, num_Z, cleave_phase_shift, pi_phase_shift, r_DFB_DBR):
     k0 = 2 * np.pi / wavelength
     K0 = np.pi / Lambda
     
     ### Grabbing values
-    deltak_DFB = derived_values['deltak_DFB'][i,j,k]
-    alpha_DFB = derived_values['alpha_DFB'][i,j,k]
-    deltak_DBR = derived_values['deltak_DBR'][i,j,k]
-    alpha_DBR = derived_values['alpha_DBR'][i,j,k]
-    asurf_DFB = derived_values['asurf_DFB'][i,j,k]
-    asurf_DBR = derived_values['asurf_DBR'][i,j,k]
-    kappa_DFB = derived_values['kappa_DFB'][i,j,k]
-    zeta_DFB = derived_values['zeta_DFB'][i,j,k]
-    kappa_DBR = derived_values['kappa_DBR'][i,j,k]
-    zeta_DBR = derived_values['zeta_DBR'][i,j,k]
+    deltak_DFB = derived_values['deltak_DFB']
+    alpha_DFB = derived_values['alpha_DFB']
+    deltak_DBR = derived_values['deltak_DBR']
+    alpha_DBR = derived_values['alpha_DBR']
+    asurf_DFB = derived_values['asurf_DFB']
+    asurf_DBR = derived_values['asurf_DBR']
+    kappa_DFB = derived_values['kappa_DFB']
+    zeta_DFB = derived_values['zeta_DFB']
+    kappa_DBR = derived_values['kappa_DBR']
+    zeta_DBR = derived_values['zeta_DBR']
     # def format_value(value):
     #     if isinstance(value, list):
     #         return '[' + ', '.join(f'{v:.6f}' if isinstance(v, (int, float)) else str(v) for v in value) + ']'
@@ -216,9 +215,11 @@ def Solve_EE(i, j, k, L, l, wavelength, Lambda, derived_values, rR, rL, num_Mode
     #     kappa: {format_value(kappa_DBR)}
     #     zeta: {format_value(zeta_DBR)}
     # """)
-    alpha_extra_dbr = alpha_DBR - alpha_DFB
+    
+    # exit()
+    # alpha_extra_dbr = alpha_DBR[0] - alpha_DFB[0]
     DFB_Periods = round(L/(Lambda))
-    duty_cycle = derived_values['params'][2][k]
+    
     L1 = DFB_Periods * Lambda / 2
     L2 = L1
 
@@ -228,12 +229,9 @@ def Solve_EE(i, j, k, L, l, wavelength, Lambda, derived_values, rR, rL, num_Mode
     ### Initial guess for alpha, deltak, which are solved for by fsolve
     ### Solving with Fvec_solv, i.e. transfer matrix method
     alpha_m, delta_m = Solver_Loop(inputs, num_Modes)    
-    print(f"Number of modes found: {len(alpha_m)}")
-
     
-    if Plot_SWEEP:
-        plot_mode_spectrum(k0, wavelength, Lambda, alpha_m, delta_m)
-        
+
+
     return(alpha_m, delta_m, kappa_DFB, zeta_DFB, asurf_DFB, kappa_DBR, zeta_DBR, asurf_DBR)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#

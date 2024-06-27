@@ -7,4 +7,7 @@
 !20220216_5L_EEDFB_cap_GH_finesweep_shallowgratings_combine.txt
 !infinitegrating_9.9um_Ti-Ag_EE_1storder_60stg_Huilong_Active_FINAL.txt
 *.json
+*.pkl
 !EE_JSON_Template.json
+!EE_NP_JSON_Template.json
+!infinitegrating_4.59um_DRS_Taper_thicker_clad_sweep_Updated_Mesh.csv
