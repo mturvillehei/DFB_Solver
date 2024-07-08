@@ -1,10 +1,11 @@
 # DFB_Solver
 
-#Based off of the Transfer Matrix Model from S. Li et al., IEEE J. Sel. Topics. Quantum Electron. 9, 1153 (2003). Code originally written by C. Siegler in .m for the Mawst/Botez lab. Converted to Python and wrapped. Unless specified otherwise, units are cm
+Based off of the Transfer Matrix Model from S. Li et al., IEEE J. Sel. Topics. Quantum Electron. 9, 1153 (2003). Code originally written by C. Siegler in Matlab for the Mawst/Botez lab. Unless specified otherwise, units are cm.
 
-Solver for COMSOL outputs, with some assumptions on the output shape from COMSOL. Based on the original Matlab script. Benchmarked --> 7-10x performance increase per iteration!
+## Main Solver Script
+There are two main scripts, which are functionally identical as solvers: DFB_Finite_Mode_Solver.py and DFBsolve_NP.py. 
 
-EEDFB_Finite_Mode_Solver is built for loading JSON files, containing parameters for the execution.
+##### DFB_Finite_Mode_Solver.py
 
 Process flow is as follows:
 
@@ -13,7 +14,7 @@ In COMSOL, a 3D parametric sweep is performed - the values populate the first th
 Raw data is output as a text file. Place this text file in the Data folder, and update the corresponding template JSON file with the filename.
 Additionally, update any other parameters. Parametric sweeps over multiple config files/multiple parameters can be additionally handled by wrapping the Main() function.
 
-Within EEDFB_Finite_Mode_Solver, data is loaded.
+Within DFB_Finite_Mode_Solver, data is loaded.
 
 Data is sorted via Sort_Data_Infinite.py
 
@@ -29,10 +30,18 @@ Upon repeat execution, the solve() function isn't re-executed. Data instead is l
 Parametric sweeps of non-trivial values are performed inside param_Sweep, creating a new JSON output file for each point in the sweep.
 Parametric sweeps of trivial values (i.e. CT, GH, DC) are performed in results_Sweep. This enables collecting a table of results for linear plotting.
 
-## Main Script (Analysis.py)
+##### DFBsolve_NP.py. 
+This is a modification to the DFB_Finite_Mode_Solver.py script that allows for variable columns. The primary change is the ability to use any number of columns in the COMSOL parametric sweep (e.g. all three cladding thicknesses, grating height, duty cycle, etc). The JSON file is slightly different for the NP simulations, and is labelled as such. The execution of the script with the new JSON file is otherwise the same. 
+Please note the parameter 'AMR', which indicates if adaptive mesh refinement was used. This parameter strips the redundant AMR columns during the initial row sorting.
+
+Data is now stored in a pickle file, since the results filesize can grow very large. Be careful of memory - the pickle file will be loaded directly into memory in the Analysis() script. 
+
+Due to the complexity of plotting an N-dimensional set of results, plotting is handled separately in the Analysis() script below. Therefore, all of the JSON config parameters that control plotting is removed.
+
+# Analysis.py
 
 ### Overview
-The main script orchestrates the analysis process, handling command-line arguments, configuration loading, and execution of analysis functions.
+The Analysis the analysis process, handling command-line arguments, configuration loading, and execution of post-processing calculations.
 
 ### Key Functions
 
@@ -44,6 +53,11 @@ The main script orchestrates the analysis process, handling command-line argumen
 
 ```
 python Analysis.py --config <config_file> --output-dir <output_directory> --log-level <log_level> [--generate-plots] [--plot-variable <variable>] [--correlation-matrix] [--trend-analysis]
+```
+
+Example CLI call:
+```
+python Analysis.py --config Data/EE_NP_JSON_template.json --output-dir Data/plots --log-level INFO --generate-plots --plot-variable Jth --correlation-matrix --trend-analysis
 ```
 
 #### Arguments
