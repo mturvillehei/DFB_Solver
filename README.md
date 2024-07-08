@@ -1,9 +1,20 @@
 # DFB_Solver
 
-Based off of the Transfer Matrix Model from S. Li et al., IEEE J. Sel. Topics. Quantum Electron. 9, 1153 (2003). Code originally written by C. Siegler in Matlab for the Mawst/Botez lab. Unless specified otherwise, units are cm.
+Based off of the Transfer Matrix Model from S. Li et al., IEEE J. Sel. Topics. Quantum Electron. 9, 1153 (2003). Code originally written by C. Siegler in Matlab for the Mawst/Botez lab. 
 
 ## Main Solver Script
+Simulations are defined with a JSON config file, containing the relevant parameters. It is possible to vary the JSON parameters programmatically in order to run large parametric sweeps of the input values.
+
+Units in the JSON config file are generally in centimeters. Target units for the COMSOL results are:
+
+ - Gamma (confinement) - unitless.
+ - Delta Kappa (detuning in wavenumber) - cm<sup>-1</sup>.
+ - Mode Loss (i.e. waveguide loss in the longitudinal direction) - cm<sup>-1</sup>.
+ - Wavelength (for the given mode, calculated in COMSOL) - µm. (Note that this is not the target wavelength, which is a separate parameter in the JSON file, and is defined in centimeters).
+ - Surface Loss (optical emission out of the substrate) - cm<sup>-1</sup>.
+
 There are two main scripts, which are functionally identical as solvers: DFB_Finite_Mode_Solver.py and DFBsolve_NP.py. 
+
 
 ##### DFB_Finite_Mode_Solver.py:
 
@@ -30,7 +41,7 @@ Parametric sweeps of trivial values (i.e. CT, GH, DC) are performed in results_S
 
 ##### DFBsolve_NP.py:
 This is a modification to the DFB_Finite_Mode_Solver.py script that allows for variable columns. The primary change is the ability to use any number of columns in the COMSOL parametric sweep (e.g. all three cladding thicknesses, grating height, duty cycle, etc). The JSON file is slightly different for the NP simulations, and is labelled as such. The execution of the script with the new JSON file is otherwise the same. 
-Please note the parameter 'AMR', which indicates if adaptive mesh refinement was used. This parameter strips the redundant AMR columns during the initial row sorting.
+Please note the parameter 'AMR', which indicates if adaptive mesh refinement was used. This parameter strips the redundant AMR columns during the initial row sorting. We use the Gamma column to sort the modes and identify the lowest order DFB modes, which is given by setting the 'sorting_col_name' to the corresponding JSON column key. 
 
 Data is now stored in a pickle file, since the results filesize can grow very large. Be careful of memory - the pickle file will be loaded directly into memory in the Analysis() script. 
 
