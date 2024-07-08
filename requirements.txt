@@ -1,6 +1,6 @@
 matplotlib
 numpy
-json
 pandas
 scipy
-pickle
+seaborn
+argparse

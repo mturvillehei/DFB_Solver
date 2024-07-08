@@ -14,19 +14,22 @@ def safe_convert(value):
         except ValueError:
             return value
         
-def loadCSV(fn):
+def loadCSV(fn, ND):
     with open(fn, 'r') as file:
-            # Skip the first 4 lines
-            for _ in range(4):
-                next(file)
-            lines = file.readlines()
-            lines[0] = lines[0].lstrip('% ')
-            cleaned_data = ''.join(lines)
-            data_io = io.StringIO(cleaned_data)
-            df = pd.read_csv(data_io)
-            # Safely converting imaginary numbers
-            df = df.applymap(safe_convert)
-            return df
+        # Skip the first 4 lines
+        for _ in range(4):
+            next(file)
+        lines = file.readlines()
+        lines[0] = lines[0].lstrip('% ')
+        cleaned_data = ''.join(lines)
+        data_io = io.StringIO(cleaned_data)
+        df = pd.read_csv(data_io)
+        
+        # Convert only non-parameter columns
+        for col in df.columns[ND:]:
+            df[col] = df[col].apply(safe_convert)
+        
+        return df
 
 def process_group(group, headers=None):
     if len(group) < 2:
@@ -57,8 +60,15 @@ def process_group(group, headers=None):
     # Sort by sorting_col. Pick the two with highest sorting_col value in this case.
     sorted_group = group.sort_values(sorting_col, ascending=False)
     
-    mode1 = sorted_group.iloc[0]
-    mode2 = sorted_group.iloc[1]
+    top_two_modes = sorted_group.iloc[:2]
+
+    # Perform conditional assignment based on the column that corresponds to index 5 in the old script
+    if top_two_modes.iloc[0][loss_col] < top_two_modes.iloc[1][loss_col]:  # Assuming loss_col corresponds to index 5 in the old script
+        mode2 = top_two_modes.iloc[0]
+        mode1 = top_two_modes.iloc[1]
+    else:
+        mode2 = top_two_modes.iloc[1]
+        mode1 = top_two_modes.iloc[0]
 
     try:
         
@@ -75,16 +85,26 @@ def process_group(group, headers=None):
     except KeyError as e:
         print(f"Error {e} for modes with keys {mode1.columns}")
             
-    kappa_DFB = -(deltak2_DFB - deltak1_DFB) * K0 / 2 / k0 + 1j * (alpha2_DFB - alpha1_DFB) / 2
-    zeta_DFB = -(deltak2_DFB + deltak1_DFB) * K0 / 2 / k0 + 1j * (alpha2_DFB + alpha1_DFB) / 2
+    kappa_DFB = (deltak2_DFB - deltak1_DFB) * K0 / 2 / k0 - 1j * (alpha2_DFB - alpha1_DFB) / 2
+    zeta_DFB = (deltak2_DFB + deltak1_DFB) * K0 / 2 / k0 - 1j * (alpha2_DFB + alpha1_DFB) / 2
     alpha1_DBR = alpha1_DFB + 1.5
     alpha2_DBR = alpha2_DFB + 1.5
     deltak1_DBR = deltak1_DFB
     deltak2_DBR = deltak2_DFB
     asurf_DBR = asurf_DFB
     
-    kappa_DBR = -(deltak2_DBR - deltak1_DBR) * K0 / 2 / k0 + 1j * (alpha2_DBR - alpha1_DBR) / 2
-    zeta_DBR = -(deltak2_DBR + deltak1_DBR) * K0 / 2 / k0 + 1j * (alpha2_DBR + alpha1_DBR) / 2
+    kappa_DBR = (deltak2_DBR - deltak1_DBR) * K0 / 2 / k0 - 1j * (alpha2_DBR - alpha1_DBR) / 2
+    zeta_DBR = (deltak2_DBR + deltak1_DBR) * K0 / 2 / k0 - 1j * (alpha2_DBR + alpha1_DBR) / 2
+    
+    # Fixing signs to match the original script. Data is loaded from COMSOL differently in this script.    
+    kappa_DFB = np.abs(kappa_DFB.real) - 1j * np.abs(kappa_DFB.imag)
+
+    zeta_DFB = - np.abs(zeta_DFB.real) + 1j * np.abs(zeta_DFB.imag)
+
+    kappa_DBR = np.abs(kappa_DBR.real) - 1j * np.abs(kappa_DBR.imag)
+
+    zeta_DBR = - np.abs(zeta_DBR.real) + 1j * np.abs(zeta_DBR.imag)
+    
     
     # Return a Series with the results
     return pd.Series({
@@ -151,7 +171,7 @@ def SortCSV(filename, results_fn, wavelength, Lambda, ND, ARM):
     
     k0 = 2 * np.pi / wavelength
     K0 = np.pi / Lambda
-    unsorted = loadCSV(filename)
+    unsorted = loadCSV(filename, ND)
     
     sortND(unsorted, results_fn, ND, ARM)
 

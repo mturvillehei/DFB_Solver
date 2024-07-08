@@ -27,12 +27,19 @@ def save_sort(output_fn, param_columns, final_results):
 
 def save_post_process(fn, scalar_results, array_results):
     data = read_pickle(fn)
-    data['scalar_results'] = scalar_results.to_dict()
-    data['array_results'] = array_results
+    
+    # Update with new results, preserving all existing keys
+    data.update({
+        'scalar_results': scalar_results.to_dict(),
+        'array_results': array_results
+    })
+    
     write_pickle(fn, data)
     
 def load_post_process(fn):
     data = read_pickle(fn)
     scalar_results = pd.DataFrame(data['scalar_results'])
     array_results = data['array_results']
-    return scalar_results, array_results
+    parameters = pd.DataFrame(data['parameters'])
+    inputs = pd.DataFrame(data['inputs'])
+    return scalar_results, array_results, parameters, inputs

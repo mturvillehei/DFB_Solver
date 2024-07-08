@@ -241,5 +241,6 @@ def DFB_Solver(json_filepath, params_sweep=False):
 if __name__ == "__main__":
     #filename = sys.argv[1]
     
-    filename = 'EE_NP_JSON_Template_WORKING.json'
+    filename = 'EE_NP_JSON_template.json'
     DFB_Solver("Data/" + str(filename))
+

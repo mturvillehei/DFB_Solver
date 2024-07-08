@@ -301,7 +301,8 @@ if __name__ == "__main__":
     #filename = "9.9um_60stg_Ridgeguide_HighLoss.json"
     #filename = "DRS_4.59um_DRS_EEDFB_7.5mm_HRUC_4umWid_fixed_mesh.json"
     #filename = "9.45um_60stg_Ridgeguide_18um.json"
-    filename = '9.45um_60stg_Ridgeguide_18um_param_sweep_UCUC.json'
+    #filename = '9.45um_60stg_Ridgeguide_18um_param_sweep_UCUC.json'
+    filename = 'DRS_4.59um_DRS_EEDFB_7.5mm_HRUC_4umWid_Compare_With_CSV.json'
     DFB_Solver("Data/" + str(filename))
 ### Run EEDFB_Solver initially to find the correct index values (set plot_Indices to 1 in the JSON file). Can be run from CLI by commenting out line 287 for 286
 ### Either let the execution complete, and move to results_Sweep
