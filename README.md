@@ -5,9 +5,7 @@ Based off of the Transfer Matrix Model from S. Li et al., IEEE J. Sel. Topics. Q
 ## Main Solver Script
 There are two main scripts, which are functionally identical as solvers: DFB_Finite_Mode_Solver.py and DFBsolve_NP.py. 
 
-##### DFB_Finite_Mode_Solver.py
-
-Process flow is as follows:
+##### DFB_Finite_Mode_Solver.py:
 
 In COMSOL, a 3D parametric sweep is performed - the values populate the first three columns. An additional 11 columns are populated with:
 
@@ -30,7 +28,7 @@ Upon repeat execution, the solve() function isn't re-executed. Data instead is l
 Parametric sweeps of non-trivial values are performed inside param_Sweep, creating a new JSON output file for each point in the sweep.
 Parametric sweeps of trivial values (i.e. CT, GH, DC) are performed in results_Sweep. This enables collecting a table of results for linear plotting.
 
-##### DFBsolve_NP.py. 
+##### DFBsolve_NP.py:
 This is a modification to the DFB_Finite_Mode_Solver.py script that allows for variable columns. The primary change is the ability to use any number of columns in the COMSOL parametric sweep (e.g. all three cladding thicknesses, grating height, duty cycle, etc). The JSON file is slightly different for the NP simulations, and is labelled as such. The execution of the script with the new JSON file is otherwise the same. 
 Please note the parameter 'AMR', which indicates if adaptive mesh refinement was used. This parameter strips the redundant AMR columns during the initial row sorting.
 
