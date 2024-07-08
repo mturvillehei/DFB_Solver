@@ -23,7 +23,7 @@ Solve() performs the Transfer Matrix Method (Li et all, 2003)
 Coupled_Wave_Solver() calculates the resultant field profiles 
 
 Data is output for each point in the parametric sweep, converted to lists, and then stored in the original JSON file.
-
+ - If using the ND script, data is stored instead into a pickle file.
 Upon repeat execution, the solve() function isn't re-executed. Data instead is loaded and input into the post-processing steps for parameter calculation.
 
 Parametric sweeps of non-trivial values are performed inside param_Sweep, creating a new JSON output file for each point in the sweep.
