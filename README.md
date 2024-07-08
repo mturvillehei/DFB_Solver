@@ -39,7 +39,7 @@ Due to the complexity of plotting an N-dimensional set of results, plotting is h
 # Analysis.py
 
 ### Overview
-The Analysis the analysis process, handling command-line arguments, configuration loading, and execution of post-processing calculations.
+The Analysis script handles post-processing calculations with different options for operations to perform on the solved dataset.
 
 ### Key Functions
 
