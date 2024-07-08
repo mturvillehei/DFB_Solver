@@ -3,7 +3,7 @@
     "SEDFB": 0,
     "filename": "sample_file.csv",
     "ND": 3,
-    "ARM": 0,
+    "AMR": 0,
     "COL_1": "Cladding1",
     "COL_2": "Grating_Layer",
     "plot_fields": 0,

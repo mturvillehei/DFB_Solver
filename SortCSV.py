@@ -127,7 +127,7 @@ def process_group(group, headers=None):
 
 # Groups data by unique points in the parametric sweep.
 # If adaptive mesh refinement was used, removes earlier iterations.
-def sortND(df, output_fn, ND, ARM, headers=None):
+def sortND(df, output_fn, ND, AMR, headers=None):
 
     param_columns = list(df.columns[:ND]) 
     result_columns = list(df.columns[ND:])
@@ -138,7 +138,7 @@ def sortND(df, output_fn, ND, ARM, headers=None):
         df_grouped = df.groupby(param_columns)
 
         # Picks the last refinement level for each group
-        if ARM:
+        if AMR:
             df_grouped = df_grouped.apply(lambda x: x[x['Refinement level'] == x['Refinement level'].max()])
             # df_grouped is now a DataFrame, not a GroupBy object
             results = []
@@ -165,7 +165,7 @@ def sortND(df, output_fn, ND, ARM, headers=None):
     save_sort(output_fn, param_columns, final_results)
 
                     
-def SortCSV(filename, results_fn, wavelength, Lambda, ND, ARM):
+def SortCSV(filename, results_fn, wavelength, Lambda, ND, AMR):
     global k0
     global K0
     
@@ -173,6 +173,6 @@ def SortCSV(filename, results_fn, wavelength, Lambda, ND, ARM):
     K0 = np.pi / Lambda
     unsorted = loadCSV(filename, ND)
     
-    sortND(unsorted, results_fn, ND, ARM)
+    sortND(unsorted, results_fn, ND, AMR)
 
     

@@ -59,7 +59,7 @@ def DFB_Solver(json_filepath, params_sweep=False):
     ### Number of parametric variations
     ND = params['ND']
     ### If Adaptive Mesh Refinement was used. If true, picks the final ARM solution and removes the others for each parametric point.
-    ARM = params['ARM']
+    AMR = params['AMR']
     ### Boolean that checks if Solve() has already been performed - initialized to 0. After sweep, set to 1 to allow for post-processing.
     modes_solved = params['modes_solved']        
     ### Identifying if the device is EE or SE. 1 for SE, 0 for EE.
@@ -106,7 +106,7 @@ def DFB_Solver(json_filepath, params_sweep=False):
 
     if not modes_solved:
 
-        SortCSV(filename, results_fn, wavelength, Lambda, ND, ARM)
+        SortCSV(filename, results_fn, wavelength, Lambda, ND, AMR)
 
         # Loading the pickle file that was saved in SortCSV
         data = read_pickle(results_fn)
