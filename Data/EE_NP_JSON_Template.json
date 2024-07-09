@@ -1,5 +1,5 @@
 {
-    "modes_solved": 1,
+    "modes_solved": 0,
     "SEDFB": 0,
     "filename": "sample_file.csv",
     "ND": 3,
@@ -46,6 +46,5 @@
     "tau_32": 1.181175e-12,
     "f": 5000000000.0,
     "CW_Scaling_Factor": 0.66,
-    "Lambda": 7.247063281546041e-05,
-    "results_fn": "Data/sample_file_2024-07-02.pkl"
+    "Lambda": 7.247063281546041e-05
 }
